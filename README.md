@@ -18,7 +18,7 @@ Links diretos: `?jogo=runner#arcade`, `?jogo=invaders#arcade` e `?jogo=puzzle#ar
 
 O botão **Enquadrar jogo** ajusta cenário, instruções e controles à altura disponível, inclusive no celular em modo horizontal. **Sair do enquadramento** ou **Esc** volta ao portfólio preservando a partida. A navegação por teclado fica dentro do jogo enquanto ele está enquadrado.
 
-O corredor alterna oito poses com braços, pernas e botas articulados; as naves animam asas e propulsores. **Animações ligadas/reduzidas** permite escolher os efeitos sem reiniciar a partida e salva a preferência localmente. Sem escolha explícita, vale a preferência de movimento reduzido do sistema.
+O corredor tem passada articulada com joelhos, braços opostos e botas de contraste; as naves animam asas e propulsores. A passada continua visível em movimento reduzido, em ritmo mais lento e sem balanço do tronco ou partículas. **Animações ligadas/reduzidas** permite escolher os efeitos e salva a preferência localmente. Sem escolha explícita, vale a preferência de movimento reduzido do sistema.
 
 ## Desenvolvimento
 

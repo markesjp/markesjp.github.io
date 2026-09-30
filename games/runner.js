@@ -2,10 +2,10 @@ import { palette, mix, path, panel, reducedMotion } from './scene.js?v=20260930-
 
 // Eight distinct running poses: front/back stride, lifted boots, bob and arms.
 const RUN_CYCLE = [
-  [-10, 8, 0, 5, -1, 7], [-5, 10, 0, 8, -2, 5],
-  [1, 6, 0, 6, -3, 1], [8, -2, 1, 0, -2, -5],
-  [10, -8, 5, 0, -1, -7], [5, -10, 8, 0, -2, -5],
-  [-1, -6, 6, 0, -3, -1], [-8, 2, 0, 1, -2, 5],
+  [-14, 12, 0, 10, -1, 10], [-8, 14, 0, 12, -2, 7],
+  [2, 8, 0, 8, -3, 1], [12, -4, 2, 0, -2, -8],
+  [14, -12, 10, 0, -1, -10], [8, -14, 12, 0, -2, -7],
+  [-2, -8, 8, 0, -3, -1], [-12, 4, 0, 2, -2, 8],
 ];
 
 export function mount(host) {
@@ -21,7 +21,7 @@ export function mount(host) {
     <p class="arcade-instructions" id="${id}-instructions">Pule com Espaço, ↑ ou o botão Pular. Escape pausa. Alcance 1.000 pontos sem bater. Clique em Iniciar e mantenha o foco na pista para usar o teclado.</p>
     <p class="arcade-status" role="status" aria-live="polite">Pronto para correr.</p>
     <div class="arcade-controls"><button type="button" class="arcade-primary" data-start>Iniciar</button><button type="button" data-pause disabled>Pausar</button><button type="button" class="arcade-touch-control" data-jump disabled>Pular ↑</button></div>
-    <p class="arcade-motion-note" hidden>Movimento reduzido: sem efeitos decorativos. A pista continua em movimento durante a partida; você pode pausá-la a qualquer momento.</p>`;
+    <p class="arcade-motion-note" hidden>Movimento reduzido: passada mais lenta, sem balanço do corpo ou poeira. Corrida, saltos e obstáculos continuam indicando a partida; você pode pausá-la a qualquer momento.</p>`;
   host.append(root);
   const canvas = root.querySelector('canvas');
   const ctx = canvas.getContext('2d');
@@ -44,7 +44,7 @@ export function mount(host) {
   let state = 'ready', raf = 0, lastTime = 0, elapsed = 0;
   let y = GROUND - 40, velocity = 0, obstacles = [], nextSpawn = 1.4;
   let score = 0, disposed = false;
-  let colors = palette(), distance = 0, landing = 0, dustClock = 0, particles = [];
+  let colors = palette(), distance = 0, landing = 0, dustClock = 0, particles = [], gaitPhase = 0;
 
   function setState(next, message) {
     state = next;
@@ -94,40 +94,46 @@ export function mount(host) {
     ctx.beginPath(); ctx.ellipse(101, GROUND + 4, 23 - (GROUND - 40 - y) * .08, 4, 0, 0, Math.PI * 2); ctx.fill();
     // Compact desert courier: articulated boots, visor, satchel and scarf.
     const airborne = y < GROUND - 40 - 1;
-    const animate = !reduce && (state === 'running' || state === 'paused');
-    const pose = animate && !airborne ? RUN_CYCLE[Math.floor(elapsed * 14) % RUN_CYCLE.length] : [0, 0, 0, 0, 0, 0];
-    const [frontStride, backStride, frontLift, backLift, bob, arms] = pose;
+    // The gait communicates RUNNING, so reduced motion slows it rather than
+    // removing it. Its own phase advances only on grounded gameplay ticks.
+    const animate = !reduce && state !== 'ready';
+    const pose = airborne ? [13, -9, 9, 12, 0, 8] : state === 'ready' ? [0, 0, 0, 0, 0, 0] : RUN_CYCLE[Math.floor(gaitPhase) % RUN_CYCLE.length];
+    const [frontStride, backStride, frontLift, backLift, poseBob, arms] = pose;
+    const bob = reduce ? 0 : poseBob;
     const squash = reduce ? 0 : Math.max(0, landing / .16);
     const stretch = !reduce && airborne && velocity < 0 ? .035 : 0;
     ctx.save(); ctx.translate(82, y + 40 + bob);
     ctx.scale(1 + squash * .09 - stretch, 1 - squash * .18 + stretch);
     const leg = (hip, stride, lift, back = false) => {
-      ctx.strokeStyle = mix(colors.player, colors.bg, back ? .4 : .14); ctx.lineWidth = 6;
-      ctx.beginPath(); ctx.moveTo(hip, -14); ctx.lineTo(hip + stride * .45, -8 - lift * .45);
+      ctx.strokeStyle = mix(colors.player, colors.bg, back ? .4 : .08); ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(hip, -22); ctx.lineTo(hip + stride * .4, -13 - lift * .3);
       ctx.lineTo(hip + stride, -3 - lift - bob); ctx.stroke();
-      ctx.fillStyle = mix(colors.player, colors.bg, back ? .4 : .12);
-      ctx.fillRect(hip + stride - 2, -5 - lift - bob, 9, 5);
+      // Contrast boots make contact/flight readable against both terrain themes.
+      ctx.fillStyle = back ? mix(colors.ink, colors.bg, .2) : colors.ink;
+      ctx.fillRect(hip + stride - 3, -6 - lift - bob, 11, 6);
+      ctx.fillStyle = colors.obstacle;
+      ctx.fillRect(hip + stride - 3, -2 - lift - bob, 11, 2);
     };
     ctx.lineCap = 'round';
-    leg(8, airborne ? -5 : backStride, airborne ? 7 : backLift, true);
-    leg(23, airborne ? 6 : frontStride, airborne ? 4 : frontLift);
+    leg(9, backStride, backLift, true);
+    leg(23, frontStride, frontLift);
     // The far arm swings in opposition before the torso is drawn.
     ctx.lineWidth = 5; ctx.strokeStyle = mix(colors.player, colors.bg, .4);
-    ctx.beginPath(); ctx.moveTo(7, -26); ctx.lineTo(3 - arms * .6, -18); ctx.lineTo(7 - arms, -12); ctx.stroke();
-    ctx.fillStyle = colors.player; ctx.fillRect(2, -37, 29, 26);
-    ctx.fillStyle = mix(colors.player, colors.bg, .18); ctx.fillRect(-4, -32, 10, 17);
-    ctx.fillStyle = colors.player; ctx.fillRect(11, -48, 24, 20);
-    ctx.fillStyle = mix(colors.bg, colors.player, .08); ctx.fillRect(18, -42, 17, 7);
-    ctx.fillStyle = colors.projectile; ctx.fillRect(29, -40, 3, 3);
+    ctx.beginPath(); ctx.moveTo(10, -34); ctx.lineTo(5 - arms * .55, -27); ctx.lineTo(10 - arms, -20); ctx.stroke();
+    ctx.fillStyle = colors.player; ctx.fillRect(8, -39, 23, 18);
+    ctx.fillStyle = mix(colors.player, colors.bg, .18); ctx.fillRect(1, -35, 8, 12);
+    ctx.fillStyle = colors.player; ctx.fillRect(12, -51, 23, 19);
+    ctx.fillStyle = mix(colors.bg, colors.player, .08); ctx.fillRect(18, -46, 17, 7);
+    ctx.fillStyle = colors.projectile; ctx.fillRect(29, -44, 3, 3);
     ctx.fillStyle = colors.obstacle;
-    ctx.fillRect(8, -29, 25, 4);
+    ctx.fillRect(9, -34, 24, 4);
     const flutter = animate ? Math.sin(elapsed * 13) * 5 : 1;
-    path(ctx, [[10, -27], [-17, -23 + flutter], [-11, -30 - flutter * .4], [9, -30]], colors.obstacle);
+    path(ctx, [[11, -32], [-15, -29 + flutter], [-9, -36 - flutter * .4], [10, -35]], colors.obstacle);
     ctx.lineWidth = 5; ctx.strokeStyle = mix(colors.player, colors.bg, .16);
-    ctx.beginPath(); ctx.moveTo(26, -25);
-    ctx.lineTo(29 + arms * .4, airborne ? -25 : -19);
-    ctx.lineTo(31 + arms, airborne ? -31 : -13); ctx.stroke();
-    ctx.fillStyle = colors.obstacle; ctx.fillRect(28 + arms, airborne ? -33 : -15, 6, 5);
+    ctx.beginPath(); ctx.moveTo(28, -34);
+    ctx.lineTo(28 + arms * .4, airborne ? -33 : -28);
+    ctx.lineTo(28 + arms, airborne ? -38 : -22); ctx.stroke();
+    ctx.fillStyle = colors.obstacle; ctx.fillRect(25 + arms, airborne ? -40 : -24, 6, 5);
     ctx.restore();
     obstacles.forEach(obstacle => {
       const x = obstacle.x, top = GROUND - obstacle.h;
@@ -179,6 +185,7 @@ export function mount(host) {
     landing = Math.max(0, landing - dt);
     if (y >= GROUND - 40) {
       velocity = 0;
+      gaitPhase += dt * (reduce ? 8 : 14);
       if (wasAirborne) { landing = .16; dust(9); }
       dustClock += dt;
       if (dustClock > .12) { dust(1); dustClock = 0; }
@@ -205,7 +212,7 @@ export function mount(host) {
     if (disposed || document.hidden) return;
     stop(); elapsed = 0; score = 0; scoreNode.textContent = '0';
     y = GROUND - 40; velocity = 0; obstacles = []; nextSpawn = 1.4;
-    distance = 0; landing = 0; dustClock = 0; particles = [];
+    distance = 0; landing = 0; dustClock = 0; particles = []; gaitPhase = 0;
     setState('running', 'Correndo. Pule os obstáculos.');
     field.focus({ preventScroll: true }); draw(); raf = requestAnimationFrame(tick);
   }
