@@ -1,4 +1,4 @@
-import { palette, mix, path, panel } from './scene.js';
+import { palette, mix, path, panel, reducedMotion } from './scene.js?v=20260930-3';
 
 export function mount(host) {
   const abort = new AbortController();
@@ -27,13 +27,14 @@ export function mount(host) {
   const scoreNode = root.querySelector('[data-score]');
   const livesNode = root.querySelector('[data-lives]');
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reduce = reducedMotion();
   const keys = new Set();
   const pointers = new Map();
   const stars = Array.from({ length: 62 }, (_, index) => ({ x: (index * 139 + 43) % 720, y: (index * 71 + 17) % 390, depth: 1 + index % 3 }));
   let state = 'ready', disposed = false, raf = 0, lastTime = 0;
   let playerX = 342, lives = 3, eliminated = 0, invulnerable = 0;
   let aliens = [], shots = [], enemyShots = [], direction = 1, fireCooldown = 0, enemyCooldown = 1;
-  let colors = palette(), elapsed = 0, particles = [], muzzle = 0;
+  let colors = palette(), elapsed = 0, particles = [], muzzle = 0, shipLean = 0;
 
   function formation() {
     return Array.from({ length: 18 }, (_, index) => ({ x: 134 + (index % 6) * 70, y: 48 + Math.floor(index / 6) * 40, column: index % 6, kind: Math.floor(index / 6) }));
@@ -53,13 +54,14 @@ export function mount(host) {
     touchButtons.forEach(button => { button.disabled = next !== 'running'; });
   }
   function draw() {
+    const animate = !reduce && (state === 'running' || state === 'paused');
     ctx.fillStyle = colors.bg; ctx.fillRect(0, 0, 720, 390);
     const nebula = ctx.createRadialGradient(490, 115, 5, 490, 115, 390);
     nebula.addColorStop(0, mix(colors.bg, colors.enemy, .15)); nebula.addColorStop(1, colors.bg);
     ctx.fillStyle = nebula; ctx.fillRect(0, 0, 720, 390);
     // Three depth bands drift independently; no drift in reduced-motion mode.
     stars.forEach(star => {
-      const y = motion.matches ? star.y : (star.y + elapsed * star.depth * 5) % 390;
+      const y = reduce ? star.y : (star.y + elapsed * star.depth * 5) % 390;
       ctx.globalAlpha = .25 + star.depth * .18; ctx.fillStyle = colors.star;
       ctx.fillRect(star.x, y, star.depth === 3 ? 2 : 1, star.depth === 3 ? 2 : 1);
     });
@@ -79,23 +81,37 @@ export function mount(host) {
     ctx.beginPath(); ctx.moveTo(18, 369); ctx.lineTo(702, 369); ctx.stroke();
     for (let x = 24; x < 710; x += 48) { ctx.beginPath(); ctx.moveTo(x, 369); ctx.lineTo(x, 374); ctx.stroke(); }
     aliens.forEach(alien => {
-      const wing = motion.matches ? 1 : Math.sin(elapsed * 5 + alien.column * .5) * 2;
-      const x = alien.x, y = alien.y;
+      const phase = elapsed * 7 + alien.column * .75 + alien.kind * .6;
+      const wing = animate ? Math.sin(phase) * 6 : 1;
+      const x = alien.x, y = alien.y + (animate ? Math.sin(phase * .6) * 2 : 0);
       const hull = alien.kind === 0 ? colors.obstacle : colors.enemy;
-      path(ctx, [[x, y + 15], [x + 5, y + 5 + wing], [x + 11, y + 7], [x + 14, y], [x + 18, y + 7], [x + 23, y + 5 - wing], [x + 28, y + 15], [x + 20, y + 18], [x + 8, y + 18]], hull);
+      // Separate articulated wing panels make the formation's cycle legible.
+      path(ctx, [[x, y + 11 + wing], [x + 5, y + 4 + wing], [x + 10, y + 8], [x + 9, y + 17], [x + 2, y + 19 - wing * .4]], mix(hull, colors.bg, .12));
+      path(ctx, [[x + 28, y + 11 - wing], [x + 23, y + 4 - wing], [x + 18, y + 8], [x + 19, y + 17], [x + 26, y + 19 + wing * .4]], mix(hull, colors.bg, .12));
+      path(ctx, [[x + 8, y + 16], [x + 10, y + 6], [x + 14, y], [x + 18, y + 6], [x + 20, y + 16], [x + 17, y + 20], [x + 11, y + 20]], hull);
+      ctx.strokeStyle = mix(hull, colors.ink, .25); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x + 2, y + 12 + wing); ctx.lineTo(x + 8, y + 11);
+      ctx.moveTo(x + 26, y + 12 - wing); ctx.lineTo(x + 20, y + 11); ctx.stroke();
       path(ctx, [[x + 10, y + 7], [x + 14, y + 3], [x + 19, y + 8], [x + 17, y + 12], [x + 12, y + 12]], mix(hull, colors.bg, .65));
       ctx.fillStyle = colors.projectile; ctx.fillRect(x + 13, y + 7, 3, 2);
-      ctx.fillStyle = mix(colors.bg, hull, .6);
-      ctx.fillRect(x + 4, y + 18, 3, 3 + Math.max(0, wing));
-      ctx.fillRect(x + 21, y + 18, 3, 3 + Math.max(0, -wing));
+      const exhaust = animate ? 5 + Math.sin(phase * 2) * 3 : 3;
+      path(ctx, [[x + 11, y + 20], [x + 14, y + 20 + exhaust], [x + 17, y + 20]], colors.danger);
     });
-    const engine = motion.matches ? 4 : 5 + Math.sin(elapsed * 25) * 2;
-    path(ctx, [[playerX + 12, 358], [playerX + 16, 358 + engine], [playerX + 20, 358]], colors.obstacle);
-    path(ctx, [[playerX + 23, 358], [playerX + 27, 358 + engine], [playerX + 31, 358]], colors.obstacle);
-    ctx.globalAlpha = invulnerable && !motion.matches ? .68 + Math.sin(elapsed * 6) * .18 : 1;
-    path(ctx, [[playerX, 359], [playerX + 3, 347], [playerX + 12, 343], [playerX + 18, 333], [playerX + 24, 343], [playerX + 33, 347], [playerX + 36, 359], [playerX + 24, 355], [playerX + 12, 355]], colors.player);
-    path(ctx, [[playerX + 14, 347], [playerX + 18, 339], [playerX + 22, 347], [playerX + 20, 351], [playerX + 16, 351]], mix(colors.player, colors.bg, .73));
-    ctx.globalAlpha = 1;
+    const engine = animate ? 13 + Math.sin(elapsed * 20) * 5 : 4;
+    ctx.save(); ctx.translate(playerX + 18, 346);
+    ctx.rotate(reduce ? 0 : shipLean);
+    const shipBob = animate ? Math.sin(elapsed * 8) * 1.4 : 0;
+    ctx.translate(0, shipBob);
+    path(ctx, [[-11, 9], [-7, 12 + engine], [-3, 9]], colors.obstacle);
+    path(ctx, [[3, 9], [7, 12 + engine], [11, 9]], colors.obstacle);
+    path(ctx, [[-9, 10], [-7, 12 + engine * .55], [-5, 10]], colors.projectile);
+    path(ctx, [[5, 10], [7, 12 + engine * .55], [9, 10]], colors.projectile);
+    ctx.globalAlpha = invulnerable && !reduce ? .68 + Math.sin(elapsed * 6) * .18 : 1;
+    path(ctx, [[-18, 13], [-15, 1], [-6, -3], [0, -13], [6, -3], [15, 1], [18, 13], [6, 9], [-6, 9]], colors.player);
+    path(ctx, [[-4, 1], [0, -7], [4, 1], [2, 5], [-2, 5]], mix(colors.player, colors.bg, .73));
+    ctx.strokeStyle = mix(colors.player, colors.ink, .26); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(-13, 5); ctx.lineTo(-5, 2); ctx.moveTo(13, 5); ctx.lineTo(5, 2); ctx.stroke();
+    ctx.restore();
     if (invulnerable) {
       ctx.strokeStyle = mix(colors.bg, colors.player, .6); ctx.lineWidth = 1;
       ctx.beginPath(); ctx.ellipse(playerX + 18, 348, 25, 22, 0, 0, Math.PI * 2); ctx.stroke();
@@ -108,7 +124,7 @@ export function mount(host) {
       ctx.fillStyle = mix(colors.bg, colors.danger, .28); ctx.fillRect(shot.x, shot.y - 10, 4, 16);
       ctx.fillStyle = colors.danger; path(ctx, [[shot.x + 2, shot.y], [shot.x + 5, shot.y + 6], [shot.x + 2, shot.y + 12], [shot.x - 1, shot.y + 6]], colors.danger);
     });
-    if (!motion.matches) {
+    if (!reduce) {
       if (muzzle > 0) { ctx.fillStyle = colors.projectile; ctx.fillRect(playerX + 15, 324, 6, 7); }
       particles.forEach(particle => {
         ctx.globalAlpha = particle.life / particle.duration;
@@ -121,7 +137,7 @@ export function mount(host) {
     }
   }
   function impact(x, y, color) {
-    if (motion.matches) return;
+    if (reduce) return;
     for (let i = 0; i < 11 && particles.length < 64; i++) {
       const angle = (Math.PI * 2 * i) / 11;
       const speed = 22 + Math.random() * 46, duration = .3 + Math.random() * .22;
@@ -153,7 +169,9 @@ export function mount(host) {
     lastTime = time; elapsed += dt; invulnerable = Math.max(0, invulnerable - dt); muzzle = Math.max(0, muzzle - dt);
     particles.forEach(p => { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; });
     particles = particles.filter(p => p.life > 0);
-    playerX = Math.max(18, Math.min(666, playerX + (Number(pressed('right')) - Number(pressed('left'))) * 330 * dt));
+    const steering = Number(pressed('right')) - Number(pressed('left'));
+    playerX = Math.max(18, Math.min(666, playerX + steering * 330 * dt));
+    shipLean += (steering * .16 - shipLean) * Math.min(1, dt * 12);
     fireCooldown = Math.max(0, fireCooldown - dt);
     if (pressed('fire')) fire();
     const alienSpeed = 38 + eliminated * 3.1;
@@ -195,7 +213,7 @@ export function mount(host) {
     if (disposed || document.hidden) return;
     stop(); aliens = formation(); shots = []; enemyShots = []; direction = 1;
     playerX = 342; lives = 3; eliminated = 0; invulnerable = 0; fireCooldown = 0; enemyCooldown = 1.1;
-    elapsed = 0; particles = []; muzzle = 0;
+    elapsed = 0; particles = []; muzzle = 0; shipLean = 0;
     livesNode.textContent = '3'; scoreNode.textContent = '0';
     setState('running', 'Defenda a nave e elimine os alvos.');
     field.focus({ preventScroll: true }); draw(); raf = requestAnimationFrame(tick);
@@ -237,8 +255,10 @@ export function mount(host) {
   listen(document, 'visibilitychange', () => { if (document.hidden) pause(); });
   listen(window, 'blur', pause);
   listen(window, 'jp-theme-change', () => { colors = palette(); draw(); });
-  motion.addEventListener('change', () => { root.querySelector('.arcade-motion-note').hidden = !motion.matches; draw(); }, { signal: abort.signal });
-  root.querySelector('.arcade-motion-note').hidden = !motion.matches;
+  const onMotion = () => { reduce = reducedMotion(); root.querySelector('.arcade-motion-note').hidden = !reduce; if (reduce) particles = []; draw(); };
+  motion.addEventListener('change', onMotion, { signal: abort.signal });
+  listen(window, 'jp-motion-change', onMotion);
+  root.querySelector('.arcade-motion-note').hidden = !reduce;
   draw();
   return { pause, dispose() { if (disposed) return; disposed = true; stop(); abort.abort(); root.remove(); } };
 }

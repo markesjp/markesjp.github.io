@@ -1,3 +1,5 @@
+import { reducedMotion } from './scene.js?v=20260930-3';
+
 const GOAL = [1, 2, 3, 4, 5, 6, 7, 8, 0];
 function adjacent(index, empty) {
   return Math.abs(Math.floor(index / 3) - Math.floor(empty / 3)) + Math.abs(index % 3 - empty % 3) === 1;
@@ -66,7 +68,7 @@ export function mount(host) {
     boardNode.removeAttribute('aria-busy');
   }
   function slide(number, from, to) {
-    if (motion.matches || document.hidden) return;
+    if (reducedMotion() || document.hidden) return;
     const tile = buttons.find(button => Number(button.dataset.tile) === number);
     if (!tile.animate) return;
     const step = (boardNode.getBoundingClientRect().width + 8) / 3;
@@ -142,6 +144,8 @@ export function mount(host) {
   document.addEventListener('visibilitychange', () => { if (document.hidden) cancelSlide(); }, { signal: abort.signal });
   window.addEventListener('blur', cancelSlide, { signal: abort.signal });
   motion.addEventListener('change', cancelSlide, { signal: abort.signal });
+  window.addEventListener('jp-motion-change', cancelSlide, { signal: abort.signal });
+  window.addEventListener('jp-fit-change', cancelSlide, { signal: abort.signal });
   render();
   return { pause: cancelSlide, dispose() { if (disposed) return; disposed = true; cancelSlide(); abort.abort(); root.remove(); } };
 }

@@ -14,8 +14,8 @@
   <script src="navigation.js" defer></script>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="technologies.css">
-  <link rel="stylesheet" href="games/styles.css?v=9756e85">
-  <script type="module" src="games/arcade.js"></script>
+  <link rel="stylesheet" href="games/styles.css?v=20260930-3">
+  <script type="module" src="games/arcade.js?v=20260930-3"></script>
 </head>
 <body>
 <a class="skip" href="#principal">Pular para o conteúdo</a>
@@ -183,7 +183,13 @@
   <section class="arcade-section section wrap" id="arcade" aria-labelledby="arcade-title">
     <div class="section-heading"><p class="eyebrow">04 / Um intervalo</p><h2 id="arcade-title"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><use href="assets/icons.svg#gamepad-2"/></svg> Antes da conversa,<br>divirta-se um pouco.</h2><p>Escolha uma partida curta.<br>Um jogo por vez, sem carregar os outros.</p></div>
     <div class="arcade-switcher" role="group" aria-label="Escolher um jogo"><button type="button" data-game="runner" aria-pressed="false">Corrida</button><button type="button" data-game="invaders" aria-pressed="false">Invasores espaciais</button><button type="button" data-game="puzzle" aria-pressed="false">Puzzle</button></div>
-    <div id="arcade-stage" aria-live="polite"><p>Os jogos são carregados quando você chega a esta seção.</p></div>
+    <div class="arcade-frame" id="arcade-frame">
+      <div class="arcade-settings" aria-label="Opções do jogo">
+        <button type="button" id="arcade-motion-toggle" aria-pressed="false"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><use href="assets/icons.svg?v=20260930-3#sparkles"/></svg><span class="arcade-setting-label">Animações</span></button>
+        <button type="button" id="arcade-fit-toggle" aria-pressed="false"><svg class="icon" aria-hidden="true" viewBox="0 0 24 24"><use href="assets/icons.svg?v=20260930-3#maximize"/></svg><span class="arcade-setting-label">Enquadrar jogo</span></button>
+      </div>
+      <div id="arcade-stage" aria-live="polite"><p>Os jogos são carregados quando você chega a esta seção.</p></div>
+    </div>
     <noscript><p>Ative o JavaScript para jogar. O restante do portfólio funciona sem ele.</p></noscript>
   </section>
 

@@ -1,4 +1,12 @@
-import { palette, mix, path, panel } from './scene.js';
+import { palette, mix, path, panel, reducedMotion } from './scene.js?v=20260930-3';
+
+// Eight distinct running poses: front/back stride, lifted boots, bob and arms.
+const RUN_CYCLE = [
+  [-10, 8, 0, 5, -1, 7], [-5, 10, 0, 8, -2, 5],
+  [1, 6, 0, 6, -3, 1], [8, -2, 1, 0, -2, -5],
+  [10, -8, 5, 0, -1, -7], [5, -10, 8, 0, -2, -5],
+  [-1, -6, 6, 0, -3, -1], [-8, 2, 0, 1, -2, 5],
+];
 
 export function mount(host) {
   const abort = new AbortController();
@@ -30,7 +38,8 @@ export function mount(host) {
   const jumpButton = root.querySelector('[data-jump]');
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const motionNote = root.querySelector('.arcade-motion-note');
-  const onMotion = () => { motionNote.hidden = !motion.matches; draw(); };
+  let reduce = reducedMotion();
+  const onMotion = () => { reduce = reducedMotion(); motionNote.hidden = !reduce; if (reduce) particles = []; draw(); };
   const GROUND = 244;
   let state = 'ready', raf = 0, lastTime = 0, elapsed = 0;
   let y = GROUND - 40, velocity = 0, obstacles = [], nextSpawn = 1.4;
@@ -48,7 +57,7 @@ export function mount(host) {
     root.dataset.state = next;
   }
   function draw() {
-    const decorDistance = motion.matches ? 0 : distance;
+    const decorDistance = reduce ? 0 : distance;
     const sky = ctx.createLinearGradient(0, 0, 0, GROUND);
     sky.addColorStop(0, colors.bg); sky.addColorStop(1, mix(colors.bg, colors.obstacle, .13));
     ctx.fillStyle = sky; ctx.fillRect(0, 0, 720, 300);
@@ -85,14 +94,26 @@ export function mount(host) {
     ctx.beginPath(); ctx.ellipse(101, GROUND + 4, 23 - (GROUND - 40 - y) * .08, 4, 0, 0, Math.PI * 2); ctx.fill();
     // Compact desert courier: articulated boots, visor, satchel and scarf.
     const airborne = y < GROUND - 40 - 1;
-    const phase = elapsed * 19;
-    const stride = motion.matches || state !== 'running' || airborne ? 0 : Math.sin(phase) * 7;
-    const squash = motion.matches ? 0 : Math.max(0, landing / .16);
-    ctx.save(); ctx.translate(82, y + 40);
-    ctx.scale(1 + squash * .09, 1 - squash * .18);
-    ctx.lineCap = 'round'; ctx.lineWidth = 6; ctx.strokeStyle = mix(colors.player, colors.bg, .25);
-    ctx.beginPath(); ctx.moveTo(9, -13); ctx.lineTo(9 + stride, -3); ctx.lineTo(13 + stride, -2);
-    ctx.moveTo(23, -13); ctx.lineTo(23 - stride, airborne ? -7 : -3); ctx.lineTo(28 - stride, airborne ? -7 : -2); ctx.stroke();
+    const animate = !reduce && (state === 'running' || state === 'paused');
+    const pose = animate && !airborne ? RUN_CYCLE[Math.floor(elapsed * 14) % RUN_CYCLE.length] : [0, 0, 0, 0, 0, 0];
+    const [frontStride, backStride, frontLift, backLift, bob, arms] = pose;
+    const squash = reduce ? 0 : Math.max(0, landing / .16);
+    const stretch = !reduce && airborne && velocity < 0 ? .035 : 0;
+    ctx.save(); ctx.translate(82, y + 40 + bob);
+    ctx.scale(1 + squash * .09 - stretch, 1 - squash * .18 + stretch);
+    const leg = (hip, stride, lift, back = false) => {
+      ctx.strokeStyle = mix(colors.player, colors.bg, back ? .4 : .14); ctx.lineWidth = 6;
+      ctx.beginPath(); ctx.moveTo(hip, -14); ctx.lineTo(hip + stride * .45, -8 - lift * .45);
+      ctx.lineTo(hip + stride, -3 - lift - bob); ctx.stroke();
+      ctx.fillStyle = mix(colors.player, colors.bg, back ? .4 : .12);
+      ctx.fillRect(hip + stride - 2, -5 - lift - bob, 9, 5);
+    };
+    ctx.lineCap = 'round';
+    leg(8, airborne ? -5 : backStride, airborne ? 7 : backLift, true);
+    leg(23, airborne ? 6 : frontStride, airborne ? 4 : frontLift);
+    // The far arm swings in opposition before the torso is drawn.
+    ctx.lineWidth = 5; ctx.strokeStyle = mix(colors.player, colors.bg, .4);
+    ctx.beginPath(); ctx.moveTo(7, -26); ctx.lineTo(3 - arms * .6, -18); ctx.lineTo(7 - arms, -12); ctx.stroke();
     ctx.fillStyle = colors.player; ctx.fillRect(2, -37, 29, 26);
     ctx.fillStyle = mix(colors.player, colors.bg, .18); ctx.fillRect(-4, -32, 10, 17);
     ctx.fillStyle = colors.player; ctx.fillRect(11, -48, 24, 20);
@@ -100,10 +121,13 @@ export function mount(host) {
     ctx.fillStyle = colors.projectile; ctx.fillRect(29, -40, 3, 3);
     ctx.fillStyle = colors.obstacle;
     ctx.fillRect(8, -29, 25, 4);
-    const flutter = motion.matches ? 1 : Math.sin(elapsed * 13) * 3;
-    path(ctx, [[10, -27], [-12, -25 + flutter], [-7, -31], [9, -30]], colors.obstacle);
+    const flutter = animate ? Math.sin(elapsed * 13) * 5 : 1;
+    path(ctx, [[10, -27], [-17, -23 + flutter], [-11, -30 - flutter * .4], [9, -30]], colors.obstacle);
     ctx.lineWidth = 5; ctx.strokeStyle = mix(colors.player, colors.bg, .16);
-    ctx.beginPath(); ctx.moveTo(26, -23); ctx.lineTo(32, -17 + (airborne ? -3 : stride * .3)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(26, -25);
+    ctx.lineTo(29 + arms * .4, airborne ? -25 : -19);
+    ctx.lineTo(31 + arms, airborne ? -31 : -13); ctx.stroke();
+    ctx.fillStyle = colors.obstacle; ctx.fillRect(28 + arms, airborne ? -33 : -15, 6, 5);
     ctx.restore();
     obstacles.forEach(obstacle => {
       const x = obstacle.x, top = GROUND - obstacle.h;
@@ -112,7 +136,7 @@ export function mount(host) {
       ctx.strokeStyle = mix(colors.obstacle, colors.ink, .25); ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(x + 5, top + 14); ctx.lineTo(x + obstacle.w * .45, top + 10); ctx.stroke();
     });
-    if (!motion.matches) particles.forEach(particle => {
+    if (!reduce) particles.forEach(particle => {
       ctx.globalAlpha = particle.life / particle.duration;
       ctx.fillStyle = colors.obstacle; ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
     });
@@ -122,7 +146,7 @@ export function mount(host) {
     }
   }
   function dust(count) {
-    if (motion.matches) return;
+    if (reduce) return;
     for (let i = 0; i < count && particles.length < 28; i++) {
       const duration = .3 + Math.random() * .24;
       particles.push({ x: 91, y: GROUND - 2, vx: -35 - Math.random() * 55, vy: -18 - Math.random() * 30, size: 2 + Math.random() * 2, life: duration, duration });
@@ -200,6 +224,7 @@ export function mount(host) {
   // is handled at the root so the pause button can keep its intended action.
   listen(root, 'focusout', event => { if (!root.contains(event.relatedTarget)) pause(); });
   motion.addEventListener('change', onMotion, { signal: abort.signal });
+  listen(window, 'jp-motion-change', onMotion);
   listen(window, 'jp-theme-change', () => { colors = palette(); draw(); });
   onMotion();
   return { pause, dispose() { if (disposed) return; disposed = true; stop(); abort.abort(); root.remove(); } };

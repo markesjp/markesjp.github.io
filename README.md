@@ -16,6 +16,10 @@ A corrida usa cenário de deserto em camadas, personagem articulado e efeitos de
 
 Links diretos: `?jogo=runner#arcade`, `?jogo=invaders#arcade` e `?jogo=puzzle#arcade`.
 
+O botão **Enquadrar jogo** ajusta cenário, instruções e controles à altura disponível, inclusive no celular em modo horizontal. **Sair do enquadramento** ou **Esc** volta ao portfólio preservando a partida. A navegação por teclado fica dentro do jogo enquanto ele está enquadrado.
+
+O corredor alterna oito poses com braços, pernas e botas articulados; as naves animam asas e propulsores. **Animações ligadas/reduzidas** permite escolher os efeitos sem reiniciar a partida e salva a preferência localmente. Sem escolha explícita, vale a preferência de movimento reduzido do sistema.
+
 ## Desenvolvimento
 
 Requer Node.js. Execute `node preview.mjs` e abra http://127.0.0.1:4173. Arquivos HTML, CSS, JavaScript e SVG são servidos sem etapa de build.

@@ -1,4 +1,13 @@
 // Shared drawing primitives; no timers, DOM listeners or animation loops.
+let systemMotion;
+export function reducedMotion() {
+  const choice = document.documentElement.dataset.arcadeMotion;
+  if (choice === 'enabled') return false;
+  if (choice === 'reduced') return true;
+  systemMotion ||= window.matchMedia('(prefers-reduced-motion: reduce)');
+  return systemMotion.matches;
+}
+
 export function mix(left, right, amount) {
   const parse = color => {
     if (color.startsWith('#')) {
