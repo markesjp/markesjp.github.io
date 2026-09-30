@@ -1,0 +1,142 @@
+[
+  {
+    "id": "typescript",
+    "file": "typescript.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/typescript.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "nestjs",
+    "file": "nestjs.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/nestjs.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "nextdotjs",
+    "file": "nextdotjs.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/nextdotjs.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "react",
+    "file": "react.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/react.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "python",
+    "file": "python.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/python.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "fastapi",
+    "file": "fastapi.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/fastapi.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "postgresql",
+    "file": "postgresql.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/postgresql.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "kotlin",
+    "file": "kotlin.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/kotlin.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "cplusplus",
+    "file": "cplusplus.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/cplusplus.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "langchain",
+    "file": "langchain.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/langchain.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "crewai",
+    "file": "crewai.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/crewai.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "opencv",
+    "file": "opencv.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/opencv.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "numpy",
+    "file": "numpy.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/numpy.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "docker",
+    "file": "docker.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/docker.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "redis",
+    "file": "redis.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/redis.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "nginx",
+    "file": "nginx.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/nginx.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "keycloak",
+    "file": "keycloak.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/keycloak.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "git",
+    "file": "git.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/git.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "prometheus",
+    "file": "prometheus.svg",
+    "source": "https://raw.githubusercontent.com/simple-icons/simple-icons/d4e6ba93e48f178898707f0145ec285f28b64b38/icons/prometheus.svg",
+    "library": "Simple Icons",
+    "license": "CC0-1.0"
+  },
+  {
+    "id": "aws",
+    "file": "aws.svg",
+    "source": "https://raw.githubusercontent.com/devicons/devicon/7330accdbc47e2dc0c19789a48533c4a3c50fe58/icons/amazonwebservices/amazonwebservices-plain-wordmark.svg",
+    "library": "Devicon",
+    "license": "MIT"
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "retrievedAt": "2026-09-30",
+  "assets": [
+    {
+      "id": "azureopenai",
+      "file": "azureopenai.svg",
+      "title": "Azure OpenAI",
+      "source": "https://arch-center.azureedge.net/icons/Azure_Public_Service_Icons_V24.zip",
+      "archivePath": "Azure_Public_Service_Icons/Icons/ai + machine learning/03438-icon-service-Azure-OpenAI.svg",
+      "sourcePage": "https://learn.microsoft.com/en-us/azure/architecture/icons/",
+      "license": "Microsoft Azure architecture icon terms",
+      "licenseUrl": "https://learn.microsoft.com/en-us/azure/architecture/icons/#icon-terms",
+      "copyright": "Microsoft Corporation",
+      "usage": "Official product icon used to document Azure OpenAI in the technology stack. Microsoft permits architectural diagrams, training materials and documentation; preserve the icon shape and use the product name alongside it.",
+      "modified": false
+    },
+    {
+      "id": "pgbouncer",
+      "file": "pgbouncer.svg",
+      "title": "PgBouncer",
+      "source": "https://www.pgbouncer.org/images/pgbouncer-logo.svg",
+      "sourcePage": "https://www.pgbouncer.org/",
+      "sourceRepository": "https://github.com/pgbouncer/pgbouncer.github.io",
+      "license": "ISC",
+      "licenseUrl": "https://raw.githubusercontent.com/pgbouncer/pgbouncer.github.io/master/LICENSE",
+      "localLicense": "LICENSE-PGBOUNCER.txt",
+      "copyright": "Copyright (c) 2015 PgBouncer Authors",
+      "usage": "Official project SVG from the PgBouncer website, retained unchanged. Copyright and permission notice are distributed with the asset.",
+      "modified": false
+    }
+  ]
+}

@@ -1,3 +1,5 @@
+import { palette, mix, path, panel } from './scene.js';
+
 export function mount(host) {
   const abort = new AbortController();
   const id = `runner-${Math.random().toString(36).slice(2, 8)}`;
@@ -6,7 +8,7 @@ export function mount(host) {
   root.innerHTML = `
     <div class="arcade-game-head"><h3>Corrida de obstáculos</h3><p class="arcade-score" aria-live="off">Pontos: <span data-score>0</span> / 1.000</p></div>
     <div class="arcade-playfield" tabindex="0" role="group" aria-label="Área da corrida" aria-describedby="${id}-instructions">
-      <canvas width="720" height="300" role="img" aria-label="Personagem salta obstáculos em uma pista horizontal"></canvas>
+      <canvas width="720" height="300" role="img" aria-label="Explorador corre e salta entre rochas de um deserto com montanhas ao fundo"></canvas>
     </div>
     <p class="arcade-instructions" id="${id}-instructions">Pule com Espaço, ↑ ou o botão Pular. Escape pausa. Alcance 1.000 pontos sem bater. Clique em Iniciar e mantenha o foco na pista para usar o teclado.</p>
     <p class="arcade-status" role="status" aria-live="polite">Pronto para correr.</p>
@@ -33,6 +35,7 @@ export function mount(host) {
   let state = 'ready', raf = 0, lastTime = 0, elapsed = 0;
   let y = GROUND - 40, velocity = 0, obstacles = [], nextSpawn = 1.4;
   let score = 0, disposed = false;
+  let colors = palette(), distance = 0, landing = 0, dustClock = 0, particles = [];
 
   function setState(next, message) {
     state = next;
@@ -45,33 +48,84 @@ export function mount(host) {
     root.dataset.state = next;
   }
   function draw() {
-    ctx.fillStyle = '#0e131c'; ctx.fillRect(0, 0, 720, 300);
-    ctx.strokeStyle = '#3d4d64'; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(20, GROUND + .5); ctx.lineTo(700, GROUND + .5); ctx.stroke();
-    // Decorative marks are static when reduced motion is requested.
-    const offset = motion.matches ? 0 : (elapsed * 115) % 96;
-    ctx.fillStyle = '#263347';
-    for (let x = 24 - offset; x < 720; x += 96) ctx.fillRect(x, 264, 28, 2);
-    ctx.fillStyle = '#c4d0f3'; ctx.fillRect(82, y, 30, 34);
-    ctx.fillRect(98, y - 8, 22, 21);
-    ctx.fillStyle = '#101620'; ctx.fillRect(112, y - 2, 4, 4);
-    ctx.fillStyle = '#c4d0f3';
-    const stride = !motion.matches && state === 'running' && y >= GROUND - 40 && Math.floor(elapsed * 10) % 2;
-    ctx.fillRect(85, y + 34, 8, stride ? 4 : 6);
-    ctx.fillRect(103, y + 34, 8, stride ? 6 : 4);
-    ctx.fillStyle = '#d7ab87';
+    const decorDistance = motion.matches ? 0 : distance;
+    const sky = ctx.createLinearGradient(0, 0, 0, GROUND);
+    sky.addColorStop(0, colors.bg); sky.addColorStop(1, mix(colors.bg, colors.obstacle, .13));
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, 720, 300);
+    // A low sun/moon anchors the horizon, while ridges scroll at separate speeds.
+    ctx.save(); ctx.globalAlpha = colors.light ? .75 : .25;
+    ctx.fillStyle = colors.obstacle; ctx.beginPath(); ctx.arc(600, 72, 32, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = .18; ctx.strokeStyle = colors.obstacle;
+    ctx.beginPath(); ctx.arc(600, 72, 44, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
+    if (!colors.light) {
+      ctx.fillStyle = mix(colors.bg, colors.star, .48);
+      for (let i = 0; i < 20; i++) ctx.fillRect((i * 137 + 25) % 720, (i * 29 + 18) % 95, 1, 1);
+    }
+    const ridge = (base, height, speed, shade, step) => {
+      const offset = (decorDistance * speed) % step;
+      const points = [[-step, GROUND]];
+      for (let x = -step; x <= 720 + step; x += step) {
+        points.push([x - offset, base], [x + step * .28 - offset, base - height], [x + step * .55 - offset, base - height * .74], [x + step * .82 - offset, base - height * .21]);
+      }
+      points.push([720 + step, GROUND]); path(ctx, points, mix(colors.bg, colors.obstacle, shade));
+    };
+    ridge(203, 78, .055, .13, 274);
+    ridge(222, 51, .15, .2, 192);
+    ridge(242, 25, .32, .29, 162);
+    // Foreground track moves at the same speed as the gameplay obstacles.
+    ctx.fillStyle = mix(colors.bg, colors.obstacle, .16); ctx.fillRect(0, GROUND, 720, 56);
+    ctx.fillStyle = mix(colors.bg, colors.obstacle, .64); ctx.fillRect(0, GROUND, 720, 2);
+    ctx.fillStyle = mix(colors.bg, colors.obstacle, .31);
+    for (let i = -1; i < 15; i++) {
+      const x = i * 61 - decorDistance % 61;
+      ctx.fillRect(x, 260 + (i % 3) * 7, 10 + (i % 2) * 5, 2);
+      ctx.fillRect(x + 26, 283 - (i % 3) * 2, 4, 2);
+    }
+    ctx.fillStyle = mix(colors.bg, colors.ink, .09);
+    ctx.beginPath(); ctx.ellipse(101, GROUND + 4, 23 - (GROUND - 40 - y) * .08, 4, 0, 0, Math.PI * 2); ctx.fill();
+    // Compact desert courier: articulated boots, visor, satchel and scarf.
+    const airborne = y < GROUND - 40 - 1;
+    const phase = elapsed * 19;
+    const stride = motion.matches || state !== 'running' || airborne ? 0 : Math.sin(phase) * 7;
+    const squash = motion.matches ? 0 : Math.max(0, landing / .16);
+    ctx.save(); ctx.translate(82, y + 40);
+    ctx.scale(1 + squash * .09, 1 - squash * .18);
+    ctx.lineCap = 'round'; ctx.lineWidth = 6; ctx.strokeStyle = mix(colors.player, colors.bg, .25);
+    ctx.beginPath(); ctx.moveTo(9, -13); ctx.lineTo(9 + stride, -3); ctx.lineTo(13 + stride, -2);
+    ctx.moveTo(23, -13); ctx.lineTo(23 - stride, airborne ? -7 : -3); ctx.lineTo(28 - stride, airborne ? -7 : -2); ctx.stroke();
+    ctx.fillStyle = colors.player; ctx.fillRect(2, -37, 29, 26);
+    ctx.fillStyle = mix(colors.player, colors.bg, .18); ctx.fillRect(-4, -32, 10, 17);
+    ctx.fillStyle = colors.player; ctx.fillRect(11, -48, 24, 20);
+    ctx.fillStyle = mix(colors.bg, colors.player, .08); ctx.fillRect(18, -42, 17, 7);
+    ctx.fillStyle = colors.projectile; ctx.fillRect(29, -40, 3, 3);
+    ctx.fillStyle = colors.obstacle;
+    ctx.fillRect(8, -29, 25, 4);
+    const flutter = motion.matches ? 1 : Math.sin(elapsed * 13) * 3;
+    path(ctx, [[10, -27], [-12, -25 + flutter], [-7, -31], [9, -30]], colors.obstacle);
+    ctx.lineWidth = 5; ctx.strokeStyle = mix(colors.player, colors.bg, .16);
+    ctx.beginPath(); ctx.moveTo(26, -23); ctx.lineTo(32, -17 + (airborne ? -3 : stride * .3)); ctx.stroke();
+    ctx.restore();
     obstacles.forEach(obstacle => {
-      ctx.fillRect(obstacle.x, GROUND - obstacle.h, obstacle.w, obstacle.h);
-      ctx.fillRect(obstacle.x - 5, GROUND - obstacle.h + 10, 5, 9);
-      ctx.fillRect(obstacle.x + obstacle.w, GROUND - obstacle.h + 17, 5, 10);
+      const x = obstacle.x, top = GROUND - obstacle.h;
+      path(ctx, [[x, GROUND], [x + 2, top + 8], [x + obstacle.w * .45, top], [x + obstacle.w, top + 9], [x + obstacle.w, GROUND]], colors.obstacle);
+      path(ctx, [[x + obstacle.w * .45, top], [x + obstacle.w, top + 9], [x + obstacle.w, GROUND], [x + obstacle.w * .62, GROUND]], mix(colors.obstacle, colors.bg, .25));
+      ctx.strokeStyle = mix(colors.obstacle, colors.ink, .25); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(x + 5, top + 14); ctx.lineTo(x + obstacle.w * .45, top + 10); ctx.stroke();
     });
+    if (!motion.matches) particles.forEach(particle => {
+      ctx.globalAlpha = particle.life / particle.duration;
+      ctx.fillStyle = colors.obstacle; ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+    });
+    ctx.globalAlpha = 1;
     if (state !== 'running') {
-      ctx.fillStyle = '#0e131cd9'; ctx.fillRect(168, 78, 405, 80);
-      ctx.fillStyle = '#edf0f7'; ctx.textAlign = 'center';
-      ctx.font = '500 24px system-ui, sans-serif';
-      ctx.fillText(({ ready: 'Um salto de cada vez.', paused: 'Pausa', lost: 'Fim da corrida', won: 'Percurso concluído' })[state], 370, 111);
-      ctx.font = '14px system-ui, sans-serif'; ctx.fillStyle = '#b9c5d9';
-      ctx.fillText(state === 'paused' ? 'Use Continuar para voltar.' : state === 'ready' ? 'Inicie quando estiver pronto.' : `Sua pontuação: ${score}`, 370, 139);
+      panel(ctx, colors, ({ ready: 'Um salto de cada vez.', paused: 'Pausa', lost: 'Fim da corrida', won: 'Percurso concluído' })[state], state === 'paused' ? 'Use Continuar para voltar.' : state === 'ready' ? 'Uma travessia pelo deserto.' : `Sua pontuação: ${score}`, 194, 74, 332);
+    }
+  }
+  function dust(count) {
+    if (motion.matches) return;
+    for (let i = 0; i < count && particles.length < 28; i++) {
+      const duration = .3 + Math.random() * .24;
+      particles.push({ x: 91, y: GROUND - 2, vx: -35 - Math.random() * 55, vy: -18 - Math.random() * 30, size: 2 + Math.random() * 2, life: duration, duration });
     }
   }
   function stop() { cancelAnimationFrame(raf); raf = 0; lastTime = 0; }
@@ -96,9 +150,19 @@ export function mount(host) {
     if (document.hidden) { pause(); return; }
     const dt = lastTime ? Math.min((time - lastTime) / 1000, .04) : 0;
     lastTime = time; elapsed += dt;
+    const wasAirborne = y < GROUND - 40 - 1;
     velocity += 1580 * dt; y = Math.min(GROUND - 40, y + velocity * dt);
-    if (y >= GROUND - 40) velocity = 0;
+    landing = Math.max(0, landing - dt);
+    if (y >= GROUND - 40) {
+      velocity = 0;
+      if (wasAirborne) { landing = .16; dust(9); }
+      dustClock += dt;
+      if (dustClock > .12) { dust(1); dustClock = 0; }
+    }
     const speed = Math.min(390, 255 + elapsed * 3);
+    distance += speed * dt;
+    particles.forEach(p => { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 90 * dt; });
+    particles = particles.filter(p => p.life > 0);
     nextSpawn -= dt;
     if (nextSpawn <= 0) {
       obstacles.push({ x: 740, w: 18 + Math.random() * 11, h: 30 + Math.random() * 24 });
@@ -117,6 +181,7 @@ export function mount(host) {
     if (disposed || document.hidden) return;
     stop(); elapsed = 0; score = 0; scoreNode.textContent = '0';
     y = GROUND - 40; velocity = 0; obstacles = []; nextSpawn = 1.4;
+    distance = 0; landing = 0; dustClock = 0; particles = [];
     setState('running', 'Correndo. Pule os obstáculos.');
     field.focus({ preventScroll: true }); draw(); raf = requestAnimationFrame(tick);
   }
@@ -135,6 +200,7 @@ export function mount(host) {
   // is handled at the root so the pause button can keep its intended action.
   listen(root, 'focusout', event => { if (!root.contains(event.relatedTarget)) pause(); });
   motion.addEventListener('change', onMotion, { signal: abort.signal });
+  listen(window, 'jp-theme-change', () => { colors = palette(); draw(); });
   onMotion();
   return { pause, dispose() { if (disposed) return; disposed = true; stop(); abort.abort(); root.remove(); } };
 }

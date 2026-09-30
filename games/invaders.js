@@ -1,3 +1,5 @@
+import { palette, mix, path, panel } from './scene.js';
+
 export function mount(host) {
   const abort = new AbortController();
   const id = `invaders-${Math.random().toString(36).slice(2, 8)}`;
@@ -5,9 +7,9 @@ export function mount(host) {
   root.className = 'arcade-game';
   root.innerHTML = `
     <div class="arcade-game-head"><h3>Invasores</h3><p class="arcade-score" aria-live="off">Alvos: <span data-score>0</span> / 18 · Vidas: <span data-lives>3</span></p></div>
-    <div class="arcade-playfield" tabindex="0" role="group" aria-label="Área de jogo dos invasores" aria-describedby="${id}-instructions"><canvas width="720" height="390" role="img" aria-label="Nave se move horizontalmente e dispara contra uma formação de invasores"></canvas></div>
+    <div class="arcade-playfield" tabindex="0" role="group" aria-label="Área de jogo dos invasores" aria-describedby="${id}-instructions"><canvas width="720" height="390" role="img" aria-label="Interceptor defende uma órbita planetária contra uma formação de naves inimigas"></canvas></div>
     <p class="arcade-instructions" id="${id}-instructions">← e → movem a nave; Espaço dispara; Escape pausa. No celular, segure os botões. Elimine os 18 alvos antes que alcancem a nave. Você tem três vidas.</p>
-    <p class="arcade-status" role="status" aria-live="polite">Pronto para defender a pista.</p>
+    <p class="arcade-status" role="status" aria-live="polite">Pronto para defender a órbita.</p>
     <div class="arcade-controls"><button type="button" class="arcade-primary" data-start>Iniciar</button><button type="button" data-pause disabled>Pausar</button><button type="button" class="arcade-touch-control" data-control="left" aria-label="Mover para a esquerda" disabled>←</button><button type="button" class="arcade-touch-control" data-control="fire" disabled>Disparar</button><button type="button" class="arcade-touch-control" data-control="right" aria-label="Mover para a direita" disabled>→</button></div>
     <p class="arcade-motion-note" hidden>Movimento reduzido: sem estrelas animadas ou flashes. As naves continuam em movimento durante a partida; use Pausar quando quiser.</p>`;
   host.append(root);
@@ -27,17 +29,22 @@ export function mount(host) {
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const keys = new Set();
   const pointers = new Map();
-  const stars = Array.from({ length: 32 }, (_, index) => ({ x: (index * 139 + 43) % 720, y: (index * 71 + 17) % 338 }));
+  const stars = Array.from({ length: 62 }, (_, index) => ({ x: (index * 139 + 43) % 720, y: (index * 71 + 17) % 390, depth: 1 + index % 3 }));
   let state = 'ready', disposed = false, raf = 0, lastTime = 0;
   let playerX = 342, lives = 3, eliminated = 0, invulnerable = 0;
   let aliens = [], shots = [], enemyShots = [], direction = 1, fireCooldown = 0, enemyCooldown = 1;
+  let colors = palette(), elapsed = 0, particles = [], muzzle = 0;
 
   function formation() {
-    return Array.from({ length: 18 }, (_, index) => ({ x: 134 + (index % 6) * 70, y: 48 + Math.floor(index / 6) * 40, column: index % 6 }));
+    return Array.from({ length: 18 }, (_, index) => ({ x: 134 + (index % 6) * 70, y: 48 + Math.floor(index / 6) * 40, column: index % 6, kind: Math.floor(index / 6) }));
   }
   aliens = formation();
   function clearInputs() { keys.clear(); pointers.clear(); }
-  function pressed(action) { return keys.has(action) || [...pointers.values()].includes(action); }
+  function pressed(action) {
+    if (keys.has(action)) return true;
+    for (const value of pointers.values()) if (value === action) return true;
+    return false;
+  }
   function setState(next, message) {
     state = next; root.dataset.state = next; status.textContent = message;
     pauseButton.disabled = !['running', 'paused'].includes(next);
@@ -46,30 +53,79 @@ export function mount(host) {
     touchButtons.forEach(button => { button.disabled = next !== 'running'; });
   }
   function draw() {
-    ctx.fillStyle = '#0e131c'; ctx.fillRect(0, 0, 720, 390);
-    ctx.fillStyle = '#344256'; stars.forEach(star => ctx.fillRect(star.x, star.y, 2, 2));
-    ctx.strokeStyle = '#3d4d64'; ctx.beginPath(); ctx.moveTo(18, 369); ctx.lineTo(702, 369); ctx.stroke();
-    aliens.forEach((alien, index) => {
-      ctx.fillStyle = index % 2 ? '#a8bcd8' : '#c4d0f3';
-      ctx.fillRect(alien.x + 3, alien.y, 22, 17);
-      ctx.fillRect(alien.x, alien.y + 6, 28, 10);
-      ctx.fillRect(alien.x + 3, alien.y + 17, 4, 4);
-      ctx.fillRect(alien.x + 21, alien.y + 17, 4, 4);
-      ctx.fillStyle = '#111723'; ctx.fillRect(alien.x + 7, alien.y + 6, 4, 4); ctx.fillRect(alien.x + 17, alien.y + 6, 4, 4);
+    ctx.fillStyle = colors.bg; ctx.fillRect(0, 0, 720, 390);
+    const nebula = ctx.createRadialGradient(490, 115, 5, 490, 115, 390);
+    nebula.addColorStop(0, mix(colors.bg, colors.enemy, .15)); nebula.addColorStop(1, colors.bg);
+    ctx.fillStyle = nebula; ctx.fillRect(0, 0, 720, 390);
+    // Three depth bands drift independently; no drift in reduced-motion mode.
+    stars.forEach(star => {
+      const y = motion.matches ? star.y : (star.y + elapsed * star.depth * 5) % 390;
+      ctx.globalAlpha = .25 + star.depth * .18; ctx.fillStyle = colors.star;
+      ctx.fillRect(star.x, y, star.depth === 3 ? 2 : 1, star.depth === 3 ? 2 : 1);
     });
-    ctx.fillStyle = '#c4d0f3';
-    if (!invulnerable || motion.matches || Math.floor(invulnerable * 10) % 2 === 0) {
-      ctx.fillRect(playerX, 346, 36, 13); ctx.fillRect(playerX + 13, 333, 10, 13);
+    ctx.globalAlpha = 1;
+    // A distant ringed planet provides an orbital setting rather than a flat sky.
+    ctx.save(); ctx.translate(610, 269); ctx.rotate(-.28);
+    ctx.strokeStyle = mix(colors.bg, colors.enemy, .23); ctx.lineWidth = 9;
+    ctx.beginPath(); ctx.ellipse(0, 0, 133, 29, 0, 0, Math.PI * 2); ctx.stroke();
+    const planet = ctx.createLinearGradient(-75, -70, 75, 75);
+    planet.addColorStop(0, mix(colors.bg, colors.enemy, .29)); planet.addColorStop(1, mix(colors.bg, colors.enemy, .07));
+    ctx.fillStyle = planet; ctx.beginPath(); ctx.arc(0, 0, 80, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = mix(colors.bg, colors.enemy, .17); ctx.lineWidth = 2;
+    [-35, -10, 18, 43].forEach(y => { ctx.beginPath(); ctx.ellipse(0, y, Math.sqrt(80 ** 2 - y ** 2), 9, 0, 0, Math.PI); ctx.stroke(); });
+    ctx.strokeStyle = mix(colors.bg, colors.enemy, .3); ctx.lineWidth = 6;
+    ctx.beginPath(); ctx.ellipse(0, 0, 133, 29, 0, 0, Math.PI); ctx.stroke(); ctx.restore();
+    ctx.strokeStyle = mix(colors.bg, colors.grid, .7); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(18, 369); ctx.lineTo(702, 369); ctx.stroke();
+    for (let x = 24; x < 710; x += 48) { ctx.beginPath(); ctx.moveTo(x, 369); ctx.lineTo(x, 374); ctx.stroke(); }
+    aliens.forEach(alien => {
+      const wing = motion.matches ? 1 : Math.sin(elapsed * 5 + alien.column * .5) * 2;
+      const x = alien.x, y = alien.y;
+      const hull = alien.kind === 0 ? colors.obstacle : colors.enemy;
+      path(ctx, [[x, y + 15], [x + 5, y + 5 + wing], [x + 11, y + 7], [x + 14, y], [x + 18, y + 7], [x + 23, y + 5 - wing], [x + 28, y + 15], [x + 20, y + 18], [x + 8, y + 18]], hull);
+      path(ctx, [[x + 10, y + 7], [x + 14, y + 3], [x + 19, y + 8], [x + 17, y + 12], [x + 12, y + 12]], mix(hull, colors.bg, .65));
+      ctx.fillStyle = colors.projectile; ctx.fillRect(x + 13, y + 7, 3, 2);
+      ctx.fillStyle = mix(colors.bg, hull, .6);
+      ctx.fillRect(x + 4, y + 18, 3, 3 + Math.max(0, wing));
+      ctx.fillRect(x + 21, y + 18, 3, 3 + Math.max(0, -wing));
+    });
+    const engine = motion.matches ? 4 : 5 + Math.sin(elapsed * 25) * 2;
+    path(ctx, [[playerX + 12, 358], [playerX + 16, 358 + engine], [playerX + 20, 358]], colors.obstacle);
+    path(ctx, [[playerX + 23, 358], [playerX + 27, 358 + engine], [playerX + 31, 358]], colors.obstacle);
+    ctx.globalAlpha = invulnerable && !motion.matches ? .68 + Math.sin(elapsed * 6) * .18 : 1;
+    path(ctx, [[playerX, 359], [playerX + 3, 347], [playerX + 12, 343], [playerX + 18, 333], [playerX + 24, 343], [playerX + 33, 347], [playerX + 36, 359], [playerX + 24, 355], [playerX + 12, 355]], colors.player);
+    path(ctx, [[playerX + 14, 347], [playerX + 18, 339], [playerX + 22, 347], [playerX + 20, 351], [playerX + 16, 351]], mix(colors.player, colors.bg, .73));
+    ctx.globalAlpha = 1;
+    if (invulnerable) {
+      ctx.strokeStyle = mix(colors.bg, colors.player, .6); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.ellipse(playerX + 18, 348, 25, 22, 0, 0, Math.PI * 2); ctx.stroke();
     }
-    if (invulnerable) { ctx.strokeStyle = '#9eb4d3'; ctx.strokeRect(playerX - 4, 328, 44, 36); }
-    ctx.fillStyle = '#e9f1ff'; shots.forEach(shot => ctx.fillRect(shot.x, shot.y, 3, 12));
-    ctx.fillStyle = '#dfa887'; enemyShots.forEach(shot => ctx.fillRect(shot.x, shot.y, 4, 12));
+    shots.forEach(shot => {
+      ctx.fillStyle = mix(colors.bg, colors.projectile, .25); ctx.fillRect(shot.x, shot.y + 7, 3, 19);
+      ctx.fillStyle = colors.projectile; ctx.fillRect(shot.x, shot.y, 3, 12);
+    });
+    enemyShots.forEach(shot => {
+      ctx.fillStyle = mix(colors.bg, colors.danger, .28); ctx.fillRect(shot.x, shot.y - 10, 4, 16);
+      ctx.fillStyle = colors.danger; path(ctx, [[shot.x + 2, shot.y], [shot.x + 5, shot.y + 6], [shot.x + 2, shot.y + 12], [shot.x - 1, shot.y + 6]], colors.danger);
+    });
+    if (!motion.matches) {
+      if (muzzle > 0) { ctx.fillStyle = colors.projectile; ctx.fillRect(playerX + 15, 324, 6, 7); }
+      particles.forEach(particle => {
+        ctx.globalAlpha = particle.life / particle.duration;
+        ctx.fillStyle = colors[particle.color]; ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+      });
+      ctx.globalAlpha = 1;
+    }
     if (state !== 'running') {
-      ctx.fillStyle = '#0e131ce8'; ctx.fillRect(134, 167, 452, 84);
-      ctx.textAlign = 'center'; ctx.fillStyle = '#edf0f7'; ctx.font = '500 24px system-ui, sans-serif';
-      ctx.fillText(({ ready: 'Defenda seu espaço.', paused: 'Pausa', won: 'Formação eliminada', lost: 'Fim da defesa' })[state], 360, 200);
-      ctx.font = '14px system-ui, sans-serif'; ctx.fillStyle = '#bac6d9';
-      ctx.fillText(state === 'paused' ? 'Use Continuar para voltar.' : state === 'ready' ? 'Inicie quando estiver pronto.' : `${eliminated} de 18 alvos eliminados`, 360, 228);
+      panel(ctx, colors, ({ ready: 'Defenda seu espaço.', paused: 'Pausa', won: 'Formação eliminada', lost: 'Fim da defesa' })[state], state === 'paused' ? 'Use Continuar para voltar.' : state === 'ready' ? 'Uma formação se aproxima da órbita.' : `${eliminated} de 18 alvos eliminados`, 167, 174, 386);
+    }
+  }
+  function impact(x, y, color) {
+    if (motion.matches) return;
+    for (let i = 0; i < 11 && particles.length < 64; i++) {
+      const angle = (Math.PI * 2 * i) / 11;
+      const speed = 22 + Math.random() * 46, duration = .3 + Math.random() * .22;
+      particles.push({ x, y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed, size: i % 3 === 0 ? 3 : 2, life: duration, duration, color });
     }
   }
   function stop() { cancelAnimationFrame(raf); raf = 0; lastTime = 0; clearInputs(); }
@@ -84,7 +140,7 @@ export function mount(host) {
   }
   function fire() {
     if (state !== 'running' || fireCooldown > 0 || shots.length >= 4) return;
-    shots.push({ x: playerX + 16, y: 329 }); fireCooldown = .24;
+    shots.push({ x: playerX + 16, y: 329 }); fireCooldown = .24; muzzle = .06;
   }
   function end(won) {
     stop(); setState(won ? 'won' : 'lost', won ? 'Você eliminou os 18 invasores. Vitória!' : `Fim da partida. ${eliminated} alvos eliminados. Reinicie para tentar novamente.`); draw();
@@ -94,7 +150,9 @@ export function mount(host) {
     if (state !== 'running' || disposed) return;
     if (document.hidden) { pause(); return; }
     const dt = lastTime ? Math.min((time - lastTime) / 1000, .035) : 0;
-    lastTime = time; invulnerable = Math.max(0, invulnerable - dt);
+    lastTime = time; elapsed += dt; invulnerable = Math.max(0, invulnerable - dt); muzzle = Math.max(0, muzzle - dt);
+    particles.forEach(p => { p.life -= dt; p.x += p.vx * dt; p.y += p.vy * dt; });
+    particles = particles.filter(p => p.life > 0);
     playerX = Math.max(18, Math.min(666, playerX + (Number(pressed('right')) - Number(pressed('left'))) * 330 * dt));
     fireCooldown = Math.max(0, fireCooldown - dt);
     if (pressed('fire')) fire();
@@ -108,7 +166,10 @@ export function mount(host) {
     enemyShots.forEach(shot => { shot.y += (160 + eliminated * 3) * dt; });
     for (const shot of shots) {
       const hit = aliens.findIndex(alien => shot.x + 3 >= alien.x && shot.x <= alien.x + 28 && shot.y <= alien.y + 21 && shot.y + 12 >= alien.y);
-      if (hit >= 0) { aliens.splice(hit, 1); shot.y = -100; eliminated++; scoreNode.textContent = eliminated; }
+      if (hit >= 0) {
+        impact(aliens[hit].x + 14, aliens[hit].y + 10, 'enemy');
+        aliens.splice(hit, 1); shot.y = -100; eliminated++; scoreNode.textContent = eliminated;
+      }
     }
     shots = shots.filter(shot => shot.y > -15);
     if (aliens.length === 0) { end(true); return; }
@@ -121,6 +182,7 @@ export function mount(host) {
       enemyCooldown = .9 + Math.random() * .55;
     }
     if (!invulnerable && enemyShots.some(shot => shot.x + 4 > playerX && shot.x < playerX + 36 && shot.y + 12 >= 333 && shot.y <= 359)) {
+      impact(playerX + 18, 347, 'danger');
       lives--; livesNode.textContent = lives; invulnerable = 1.4; enemyShots = [];
       if (lives <= 0) { end(false); return; }
       status.textContent = `Nave atingida. ${lives === 1 ? 'Uma vida restante' : `${lives} vidas restantes`}.`;
@@ -133,6 +195,7 @@ export function mount(host) {
     if (disposed || document.hidden) return;
     stop(); aliens = formation(); shots = []; enemyShots = []; direction = 1;
     playerX = 342; lives = 3; eliminated = 0; invulnerable = 0; fireCooldown = 0; enemyCooldown = 1.1;
+    elapsed = 0; particles = []; muzzle = 0;
     livesNode.textContent = '3'; scoreNode.textContent = '0';
     setState('running', 'Defenda a nave e elimine os alvos.');
     field.focus({ preventScroll: true }); draw(); raf = requestAnimationFrame(tick);
@@ -173,6 +236,7 @@ export function mount(host) {
   listen(root, 'focusout', event => { clearInputs(); if (!root.contains(event.relatedTarget)) pause(); });
   listen(document, 'visibilitychange', () => { if (document.hidden) pause(); });
   listen(window, 'blur', pause);
+  listen(window, 'jp-theme-change', () => { colors = palette(); draw(); });
   motion.addEventListener('change', () => { root.querySelector('.arcade-motion-note').hidden = !motion.matches; draw(); }, { signal: abort.signal });
   root.querySelector('.arcade-motion-note').hidden = !motion.matches;
   draw();
