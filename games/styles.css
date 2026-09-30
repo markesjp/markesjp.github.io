@@ -14,7 +14,12 @@ html[data-theme='light']{
   --arcade-projectile:#183f8a;--arcade-obstacle:#536b91;--arcade-danger:#b12f45;--arcade-star:#60748f;
   --arcade-tile:#e3eaf5;--arcade-tile-movable:#d2dff5;--arcade-tile-border:#7185a5;
 }
-#arcade-stage{max-width:760px;min-height:120px;margin-inline:auto;color:var(--arcade-ink)}
+/* Let the games use the section width, with smaller gutters on compact screens. */
+.arcade-section.wrap{--arcade-gutter:clamp(24px,4vw,64px);--arcade-copy-gutter:112px;width:min(1280px,calc(100% - var(--arcade-gutter)))}
+.arcade-section>.section-heading,.arcade-section>.arcade-switcher{width:min(1180px,calc(100% - var(--arcade-copy-gutter) + var(--arcade-gutter)));margin-inline:auto}
+@media(max-width:1050px){.arcade-section.wrap{--arcade-copy-gutter:64px}}
+@media(max-width:760px){.arcade-section.wrap{--arcade-copy-gutter:40px}}
+#arcade-stage{width:100%;min-height:120px;margin-inline:auto;color:var(--arcade-ink)}
 .arcade-switcher{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0}
 .arcade-switcher button,.arcade-game button,.arcade-loading button{appearance:none;border:1px solid var(--arcade-border);border-radius:5px;background:var(--arcade-surface);color:var(--arcade-ink);font:inherit;font-size:13px;min-height:44px;padding:10px 16px;cursor:pointer;touch-action:manipulation}
 .arcade-switcher button[aria-pressed=true],.arcade-game .arcade-primary{background:var(--arcade-accent);border-color:var(--arcade-accent);color:var(--arcade-accent-ink);font-weight:600}
