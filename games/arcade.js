@@ -1,5 +1,5 @@
 const loaders = {
-  runner: () => import('./runner.js?v=20260930-4'),
+  runner: () => import('./runner.js?v=20260930-5'),
   invaders: () => import('./invaders.js?v=20260930-3'),
   puzzle: () => import('./puzzle.js?v=20260930-3'),
 };
