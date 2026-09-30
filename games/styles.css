@@ -1,0 +1,28 @@
+#arcade-stage{max-width:760px;min-height:120px;margin-inline:auto;color:#eef0f5}
+.arcade-switcher{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0}
+.arcade-switcher button,.arcade-game button,.arcade-loading button{appearance:none;border:1px solid #434955;border-radius:5px;background:#181d26;color:#e8ebf2;font:inherit;font-size:13px;min-height:44px;padding:10px 16px;cursor:pointer;touch-action:manipulation}
+.arcade-switcher button[aria-pressed=true]{background:#c4d0f3;border-color:#c4d0f3;color:#111620}
+.arcade-game{border:1px solid #333c49;border-radius:8px;overflow:hidden;background:#11161f}
+.arcade-game-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding:20px 22px;border-bottom:1px solid #303846}
+.arcade-game h3{margin:0;font-size:18px;letter-spacing:-.4px;font-weight:600}
+.arcade-score{font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;color:#bac5d8;margin:0}
+.arcade-playfield{outline-offset:-4px}
+.arcade-playfield:focus-visible{outline:2px solid #c4d0f3}
+.arcade-game canvas{display:block;width:100%;height:auto;background:#0e131c;touch-action:manipulation}
+.arcade-instructions{font-size:12px!important;line-height:1.75;color:#bdc5d2!important;margin:0!important;padding:18px 22px 0}
+.arcade-status{min-height:44px;margin:0;padding:10px 22px;font-size:13px;color:#e1e6ef}
+.arcade-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 22px 20px}
+.arcade-game .arcade-primary{background:#c4d0f3;border-color:#c4d0f3;color:#101623;font-weight:600}
+.arcade-game button:disabled{opacity:.45;cursor:default}
+.arcade-game button:focus-visible,.arcade-switcher button:focus-visible,.arcade-loading button:focus-visible{outline:2px solid #d1dcff;outline-offset:4px}
+.arcade-game button:hover:enabled{border-color:#b9c9e8}
+.arcade-touch-control{user-select:none;-webkit-user-select:none;touch-action:none!important}
+.arcade-motion-note{font-size:11px!important;color:#aab4c3!important;line-height:1.7;margin:0!important;padding:0 22px 18px}
+.arcade-loading{padding:24px;border:1px solid #333c49;background:#11161f;color:#c6cfdd;border-radius:8px;font-size:14px}
+.arcade-puzzle-board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;max-width:320px;margin:22px auto;padding:0 16px}
+.arcade-puzzle-board button{aspect-ratio:1;font:500 clamp(23px,6vw,38px)/1 ui-monospace,SFMono-Regular,Consolas,monospace;min-height:50px;background:#252e3c;border-color:#4b596e}
+.arcade-puzzle-board button[data-empty=true]{visibility:hidden}
+.arcade-puzzle-board button[data-movable=true]{border-color:#a9bfdf;background:#334259}
+.arcade-puzzle-goal{font-size:12px;color:#aab6c9;text-align:center;padding:0 16px}
+@media(max-width:500px){.arcade-game-head{padding:16px}.arcade-instructions{padding:16px 16px 0}.arcade-status{padding:10px 16px}.arcade-controls{padding:0 16px 16px}.arcade-controls button{flex:1;padding:10px}.arcade-motion-note{padding:0 16px 16px}}
+@media(prefers-reduced-motion:reduce){.arcade-game *, .arcade-switcher *{animation:none!important;transition:none!important}}
