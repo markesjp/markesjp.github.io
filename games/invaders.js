@@ -159,7 +159,7 @@ export function mount(host) {
     shots.push({ x: playerX + 16, y: 329 }); fireCooldown = .24; muzzle = .06;
   }
   function end(won) {
-    stop(); setState(won ? 'won' : 'lost', won ? 'Você eliminou os 18 invasores. Vitória!' : `Fim da partida. ${eliminated} alvos eliminados. Reinicie para tentar novamente.`); draw();
+    stop(); setState(won ? 'won' : 'lost', won ? 'Você eliminou os 18 invasores. Vitória!' : `Fim: ${eliminated}/18 alvos. Tente de novo.`); draw();
   }
   function tick(time) {
     raf = 0;

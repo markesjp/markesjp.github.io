@@ -18,6 +18,8 @@ Links diretos: `?jogo=runner#arcade`, `?jogo=invaders#arcade` e `?jogo=puzzle#ar
 
 O botão **Enquadrar jogo** ajusta cenário, instruções e controles à altura disponível, inclusive no celular em modo horizontal. **Sair do enquadramento** ou **Esc** volta ao portfólio preservando a partida. A navegação por teclado fica dentro do jogo enquanto ele está enquadrado.
 
+Ao iniciar, o jogo se alinha abaixo do cabeçalho; quando a altura é insuficiente, entra automaticamente no enquadramento. Em telas verticais, o painel acompanha a proporção do cenário, sem faixas vazias excessivas. Em telas horizontais baixas, cenário e controles ficam lado a lado e as instruções aparecem em **Como jogar**. O painel acompanha mudanças de tamanho, orientação e estado da partida.
+
 O corredor é um pequeno robô de formas arredondadas, visor e passada curta e contínua; as naves animam asas e propulsores. A passada continua visível em movimento reduzido, em ritmo mais lento e sem balanço do tronco ou partículas. **Animações ligadas/reduzidas** permite escolher os efeitos e salva a preferência localmente. Sem escolha explícita, vale a preferência de movimento reduzido do sistema.
 
 ## Desenvolvimento

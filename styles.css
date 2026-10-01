@@ -48,4 +48,11 @@ nav a[aria-current]:not([aria-current='false']){color:var(--blue);text-decoratio
 @media(max-width:1050px){.hero-main{gap:35px}.hero h1{letter-spacing:-4px}.index-item{padding:17px;min-height:172px}.index-item strong{font-size:16px}.index-item>.icon{width:32px;height:32px}.hero-index{gap:10px}.project-visual .icon,.project-visual>img{width:64px;height:64px}}
 @media(max-width:760px){html{scroll-padding-top:100px}.hero-main{grid-template-columns:1fr;gap:30px}.hero h1{letter-spacing:-3.5px}.hero-index{gap:10px}.index-item{min-height:166px;padding:18px;gap:15px 10px}.index-item strong{font-size:17px}.project-visual{align-items:flex-start;margin-bottom:5px}.project-visual .icon,.project-visual>img{width:64px;height:64px}.header{padding-block:15px}.header nav{flex-shrink:0}.header-actions{flex-shrink:0}.theme-toggle{white-space:nowrap}}
 @media(max-width:420px){.header{gap:9px}.header nav{gap:9px}.header .wordmark{font-size:30px}.theme-toggle{padding-inline:5px;font-size:11px;gap:5px}.theme-toggle svg{width:14px;height:14px}.index-item{min-height:177px;padding:15px 13px}.index-item strong{font-size:15px;letter-spacing:-.25px}.index-item small{font-size:11px}.index-item>.icon{width:32px;height:32px}}
+/* Keep section anchors and case navigation below the actual sticky header. */
+:root{--control-border:#64748b}
+html[data-theme='light']{--control-border:#738196}
+.theme-toggle,.outline{border-color:var(--control-border)}
+html{scroll-padding-top:var(--header-offset,108px)}
+.case-toc{top:var(--header-offset,108px)}
+@media(min-width:761px) and (max-width:900px){.hero-main{grid-template-columns:1fr;gap:32px}.hero h1{font-size:clamp(58px,10.2vw,88px);letter-spacing:-3.5px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal-ready .reveal{opacity:1;transform:none}*,*::before,*::after{transition:none!important;animation:none!important}.index-item:hover{transform:none}}

@@ -172,7 +172,7 @@ export function mount(host) {
     if (state === 'running' && y >= GROUND - 40 - .5) velocity = -590;
   }
   function end(won) {
-    stop(); setState(won ? 'won' : 'lost', won ? 'Você concluiu o percurso com 1.000 pontos!' : `Você bateu em um obstáculo. ${score} pontos. Reinicie para tentar novamente.`); draw();
+    stop(); setState(won ? 'won' : 'lost', won ? 'Você concluiu o percurso com 1.000 pontos!' : `Você bateu. ${score} pontos. Tente de novo.`); draw();
   }
   function tick(time) {
     raf = 0;

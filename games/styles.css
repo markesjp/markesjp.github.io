@@ -6,13 +6,13 @@
   --arcade-canvas-bg:#0d1524;--arcade-canvas-ink:#e9edf1;--arcade-canvas-muted:#a5b4c8;
   --arcade-canvas-grid:#273449;--arcade-player:#91b5ff;--arcade-enemy:#d3a475;
   --arcade-projectile:#c9e0ff;--arcade-obstacle:#7e94b6;--arcade-danger:#e38a90;--arcade-star:#a5afbd;
-  --arcade-tile:#202d42;--arcade-tile-movable:#2e4162;--arcade-tile-border:#7289aa;
+  --arcade-tile:#202d42;--arcade-tile-movable:#2e4162;--arcade-tile-border:#9aacc7;
 }
 html[data-theme='light']{
   --arcade-canvas-bg:#edf3fc;--arcade-canvas-ink:#243042;--arcade-canvas-muted:#596c84;
   --arcade-canvas-grid:#cdd8e8;--arcade-player:#315fb5;--arcade-enemy:#986020;
   --arcade-projectile:#183f8a;--arcade-obstacle:#536b91;--arcade-danger:#b12f45;--arcade-star:#60748f;
-  --arcade-tile:#e3eaf5;--arcade-tile-movable:#d2dff5;--arcade-tile-border:#7185a5;
+  --arcade-tile:#e3eaf5;--arcade-tile-movable:#d2dff5;--arcade-tile-border:#5f7493;
 }
 /* Let the games use the section width, with smaller gutters on compact screens. */
 .arcade-section.wrap{--arcade-gutter:clamp(24px,4vw,64px);--arcade-copy-gutter:112px;width:min(1280px,calc(100% - var(--arcade-gutter)))}
@@ -34,6 +34,7 @@ html[data-theme='light']{
 .arcade-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 22px 20px}
 .arcade-game button:disabled{opacity:.45;cursor:default}
 .arcade-game button:focus-visible,.arcade-switcher button:focus-visible,.arcade-loading button:focus-visible{outline:2px solid var(--arcade-accent);outline-offset:4px}
+.arcade-game button:not(.arcade-primary):not([data-tile]),.arcade-switcher button:not([aria-pressed=true]),.arcade-loading button{border-color:var(--control-border)}
 .arcade-game button:hover:enabled,.arcade-switcher button:hover,.arcade-loading button:hover{border-color:var(--arcade-accent)}
 .arcade-touch-control{user-select:none;-webkit-user-select:none;touch-action:none!important}
 .arcade-motion-note{font-size:12px!important;color:var(--arcade-muted)!important;line-height:1.7;margin:0!important;padding:0 22px 18px}
@@ -52,16 +53,26 @@ html[data-theme='light']{
 @media(max-width:500px){.arcade-game-head{padding:16px}.arcade-instructions{padding:16px 16px 0}.arcade-status{padding:10px 16px}.arcade-controls{padding:0 16px 16px}.arcade-controls button{flex:1;padding:10px}.arcade-motion-note{padding:0 16px 16px}.arcade-puzzle-scene{padding:24px 16px}}
 
 /* The fit view is a dialog in the viewport; its playfield uses the remaining space. */
+@media(max-width:500px){
+ .arcade-controls:has([data-control]){display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+ .arcade-controls:has([data-control]) button{min-width:0}
+ .arcade-controls:has([data-control]) button:nth-child(-n+2){grid-column:span 3}
+ .arcade-controls:has([data-control]) button:nth-child(n+3){grid-column:span 2}
+}
 .arcade-frame{width:100%;min-width:0}
+.arcade-game-info{display:flow-root;flex:none;min-width:0}
+.arcade-help{display:none}
 .arcade-settings{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 12px}
 .arcade-settings button{appearance:none;display:inline-flex;justify-content:center;align-items:center;gap:7px;min-height:44px;padding:10px 14px;border:1px solid var(--arcade-border);border-radius:5px;background:var(--arcade-surface);color:var(--arcade-ink);font:500 13px/1.4 var(--sans,Arial,sans-serif);cursor:pointer;touch-action:manipulation}
 .arcade-settings button:hover{border-color:var(--arcade-accent)}
+.arcade-settings button:not([aria-pressed=true]):not(:hover){border-color:var(--control-border)}
 .arcade-settings button:focus-visible{outline:2px solid var(--arcade-accent);outline-offset:3px}
 .arcade-settings button[aria-pressed=true]{border-color:var(--arcade-accent)}
 .arcade-settings .icon{width:18px;height:18px;flex:none}
 body.arcade-fit-open{overflow:hidden}
 .arcade-frame[data-fit=true]{position:fixed;inset:12px;z-index:100;width:calc(100% - 24px);max-width:1280px;height:calc(100vh - 24px);height:calc(100dvh - 24px);margin:0 auto;display:flex;flex-direction:column;gap:10px;padding:12px;overflow:hidden;background:var(--arcade-bg);color:var(--arcade-ink);border:1px solid var(--arcade-border);border-radius:8px;box-shadow:0 0 0 100vmax rgb(0 0 0 / .35)}
 .arcade-frame[data-fit=true] .arcade-settings{flex:none;margin:0}
+.arcade-frame[data-fit=true]{top:50%;bottom:auto;transform:translateY(-50%);height:var(--arcade-fit-height,calc(100dvh - 24px));max-height:calc(100dvh - 24px)}
 .arcade-frame[data-fit=true] #arcade-stage{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain}
 .arcade-frame[data-fit=true] .arcade-game{display:flex;flex-direction:column;flex:1;width:100%;height:100%;min-height:0}
 .arcade-frame[data-fit=true] .arcade-game-head,.arcade-frame[data-fit=true] .arcade-instructions,.arcade-frame[data-fit=true] .arcade-status,.arcade-frame[data-fit=true] .arcade-controls,.arcade-frame[data-fit=true] .arcade-motion-note,.arcade-frame[data-fit=true] .arcade-puzzle-goal{flex:none}
@@ -109,3 +120,20 @@ body.arcade-fit-open{overflow:hidden}
  .arcade-frame[data-fit=true] .arcade-puzzle-scene{padding:10px}
 }
 @media(prefers-reduced-motion:reduce){.arcade-game *,.arcade-switcher *{animation:none!important;transition:none!important}}
+/* Short landscape screens give the scene its own column, with reachable controls. */
+@media(min-width:560px) and (max-height:500px){
+ .arcade-frame[data-fit=true] .arcade-game{display:grid;grid-template-columns:minmax(0,1fr) clamp(200px,28vw,240px);grid-template-rows:auto minmax(0,1fr)}
+ .arcade-frame[data-fit=true] .arcade-game-head{grid-column:1/-1;grid-row:1}
+ .arcade-frame[data-fit=true] .arcade-playfield,.arcade-frame[data-fit=true] .arcade-puzzle-scene{grid-column:1;grid-row:2;height:100%;min-width:0}
+ .arcade-frame[data-fit=true] .arcade-game-info{grid-column:2;grid-row:2;overflow:auto;border-left:1px solid var(--arcade-border);overscroll-behavior:contain}
+ .arcade-frame[data-fit=true] .arcade-game-info>.arcade-instructions{display:none}
+ .arcade-frame[data-fit=true] .arcade-help{display:block;margin:4px 12px}
+ .arcade-help summary{cursor:pointer;min-height:40px;padding:8px 10px;border:1px solid var(--control-border);border-radius:4px;font-size:12px;color:var(--arcade-ink)}
+ .arcade-help-copy{font-size:12px;line-height:1.5;color:var(--arcade-muted);margin:10px 0}
+ .arcade-frame[data-fit=true] .arcade-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));padding:0 12px 6px;gap:4px}
+ .arcade-frame[data-fit=true] .arcade-controls button{min-width:0;padding-inline:5px}
+ .arcade-frame[data-fit=true] .arcade-controls:not(:has([data-control])) button:last-child{grid-column:1/-1}
+ .arcade-frame[data-fit=true] .arcade-controls:has([data-control]){grid-template-columns:repeat(6,minmax(0,1fr))}
+ .arcade-frame[data-fit=true] .arcade-controls:has([data-control]) button:nth-child(-n+2){grid-column:span 3}
+ .arcade-frame[data-fit=true] .arcade-controls:has([data-control]) button:nth-child(n+3){grid-column:span 2}
+}

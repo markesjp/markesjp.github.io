@@ -1,6 +1,6 @@
 const loaders = {
-  runner: () => import('./runner.js?v=20260930-5'),
-  invaders: () => import('./invaders.js?v=20260930-3'),
+  runner: () => import('./runner.js?v=20260930-6'),
+  invaders: () => import('./invaders.js?v=20260930-6'),
   puzzle: () => import('./puzzle.js?v=20260930-3'),
 };
 const names = { runner: 'Corrida', invaders: 'Invasores', puzzle: 'Quebra-cabeça' };
@@ -47,6 +47,42 @@ export function initArcade() {
   let observer = null;
   let inView = true;
   let fit = false, placeholder = null, returnFocus = null, inertElements = [];
+  let fitResize = null, fitSizing = 0;
+
+  const sizeFit = () => {
+    if (!fit || !frame) return;
+    const scene = frame.querySelector('.arcade-puzzle-scene') || frame.querySelector('.arcade-game > .arcade-playfield');
+    if (!scene) return;
+    const overhead = frame.getBoundingClientRect().height - scene.getBoundingClientRect().height;
+    const canvas = scene.querySelector('canvas');
+    let naturalHeight;
+    if (canvas) naturalHeight = scene.clientWidth * canvas.height / canvas.width;
+    else {
+      const style = getComputedStyle(scene);
+      const horizontal = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight);
+      const vertical = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+      naturalHeight = Math.min(320, scene.clientWidth - horizontal) + vertical;
+    }
+    const compact = window.matchMedia('(min-width:560px) and (max-height:500px)').matches;
+    const height = compact ? window.innerHeight - 24 : Math.min(window.innerHeight - 24, Math.ceil(overhead + naturalHeight));
+    const current = parseFloat(frame.style.getPropertyValue('--arcade-fit-height'));
+    if (!Number.isFinite(current) || Math.abs(current - height) > 1) frame.style.setProperty('--arcade-fit-height', `${height}px`);
+  };
+  const observeFit = () => {
+    fitResize?.disconnect();
+    if (!fit) return;
+    sizeFit();
+    if ('ResizeObserver' in window) {
+      fitResize = new ResizeObserver(scheduleFit);
+      fitResize.observe(frame);
+      frame.querySelectorAll('.arcade-settings,.arcade-game-head,.arcade-game-info,.arcade-help,.arcade-instructions,.arcade-status,.arcade-controls,.arcade-motion-note').forEach(element => fitResize.observe(element));
+    }
+  };
+  const scheduleFit = () => {
+    if (!fit || fitSizing) return;
+    fitSizing = requestAnimationFrame(() => { fitSizing = 0; sizeFit(); });
+  };
+  window.addEventListener('resize', scheduleFit, {signal: abort.signal});
 
   const setFit = enabled => {
     if (!frame || !fitButton || enabled === fit) return;
@@ -66,6 +102,9 @@ export function initArcade() {
       frame.dataset.fit = 'true';
       document.body.classList.add('arcade-fit-open');
     } else {
+      fitResize?.disconnect(); fitResize = null;
+      cancelAnimationFrame(fitSizing); fitSizing = 0;
+      frame.style.removeProperty('--arcade-fit-height');
       inertElements.forEach(([element, previous]) => { element.inert = previous; });
       inertElements = [];
       if (placeholder?.parentNode) { placeholder.before(frame); placeholder.remove(); }
@@ -78,11 +117,21 @@ export function initArcade() {
     fitButton.setAttribute('aria-pressed', String(fit));
     fitButton.querySelector('.arcade-setting-label').textContent = fit ? 'Sair do enquadramento' : 'Enquadrar jogo';
     fitButton.querySelector('use')?.setAttribute('href', `assets/icons.svg?v=20260930-3#${fit ? 'minimize' : 'maximize'}`);
+    if (fit) observeFit();
     if (fit) fitButton.focus({preventScroll: true});
     else if (returnFocus?.isConnected) returnFocus.focus({preventScroll: true});
     window.dispatchEvent(new CustomEvent('jp-fit-change', {detail: {fit}}));
   };
   fitButton?.addEventListener('click', () => setFit(!fit), {signal: abort.signal});
+  // A browser may scroll only the clicked button into view, leaving the scene
+  // behind the sticky header. Show the complete game before starting a round.
+  frame?.addEventListener('click', event => {
+    if (fit || !event.target.closest('[data-start]')) return;
+    const header = document.querySelector('.header');
+    const available = window.innerHeight - (header?.getBoundingClientRect().height || 0) - 32;
+    if (frame.getBoundingClientRect().height > available) setFit(true);
+    else frame.scrollIntoView({block: 'start', behavior: motionMedia.matches ? 'auto' : 'smooth'});
+  }, {capture: true, signal: abort.signal});
   frame?.addEventListener('keydown', event => {
     if (!fit) return;
     if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setFit(false); return; }
@@ -127,6 +176,26 @@ export function initArcade() {
       if (disposed || request !== generation) return;
       stage.replaceChildren();
       mounted = module.mount(stage);
+      const gameRoot = stage.querySelector('.arcade-game');
+      if (gameRoot) {
+        const info = document.createElement('div');
+        info.className = 'arcade-game-info';
+        gameRoot.querySelectorAll('.arcade-puzzle-goal,.arcade-instructions,.arcade-status,.arcade-controls,.arcade-motion-note').forEach(element => info.append(element));
+        gameRoot.append(info);
+        const instructions = info.querySelector('.arcade-instructions');
+        if (instructions) {
+          const help = document.createElement('details');
+          help.className = 'arcade-help';
+          const summary = document.createElement('summary');
+          summary.textContent = 'Como jogar';
+          const copy = document.createElement('p');
+          copy.className = 'arcade-help-copy';
+          copy.textContent = instructions.textContent;
+          help.append(summary, copy);
+          instructions.before(help);
+        }
+      }
+      if (fit) observeFit();
       suspend();
     } catch {
       if (disposed || request !== generation) return;
