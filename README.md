@@ -4,6 +4,8 @@
 
 Portfólio estático em português, com dark mode padrão, catálogo de projetos, estudos de caso, contato e currículo para impressão.
 
+O layout usa margens fluidas de 16 a 64 px, sem teto fixo de largura para as seções. Os parágrafos mantêm uma medida de leitura limitada. Jogos enquadrados usam 12 px de margem lateral e preservam a proporção dos cenários.
+
 ## Projetos
 
 BugHost (contribuição colaborativa), segmentação microscópica/TCC, LinguaFlow AI, NoirFlow e Gerenciador de Disco. Os projetos sem código público são apresentados por estudos de caso ou descrições locais; nenhum link de repositório é inventado.

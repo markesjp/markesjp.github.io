@@ -15,10 +15,9 @@ html[data-theme='light']{
   --arcade-tile:#e3eaf5;--arcade-tile-movable:#d2dff5;--arcade-tile-border:#5f7493;
 }
 /* Let the games use the section width, with smaller gutters on compact screens. */
-.arcade-section.wrap{--arcade-gutter:clamp(24px,4vw,64px);--arcade-copy-gutter:112px;width:min(1280px,calc(100% - var(--arcade-gutter)))}
-.arcade-section>.section-heading,.arcade-section>.arcade-switcher{width:min(1180px,calc(100% - var(--arcade-copy-gutter) + var(--arcade-gutter)));margin-inline:auto}
-@media(max-width:1050px){.arcade-section.wrap{--arcade-copy-gutter:64px}}
-@media(max-width:760px){.arcade-section.wrap{--arcade-copy-gutter:40px}}
+.arcade-section.wrap{--arcade-gutter:clamp(24px,4vw,64px);--arcade-copy-gutter:calc(var(--page-gutter) + var(--page-gutter));width:calc(100% - var(--arcade-gutter))}
+.arcade-section>.section-heading,.arcade-section>.arcade-switcher{width:calc(100% - var(--arcade-copy-gutter) + var(--arcade-gutter));margin-inline:auto}
+
 #arcade-stage{width:100%;min-height:120px;margin-inline:auto;color:var(--arcade-ink)}
 .arcade-switcher{display:flex;flex-wrap:wrap;gap:8px;margin:24px 0}
 .arcade-switcher button,.arcade-game button,.arcade-loading button{appearance:none;border:1px solid var(--arcade-border);border-radius:5px;background:var(--arcade-surface);color:var(--arcade-ink);font:inherit;font-size:13px;min-height:44px;padding:10px 16px;cursor:pointer;touch-action:manipulation}
@@ -70,7 +69,7 @@ html[data-theme='light']{
 .arcade-settings button[aria-pressed=true]{border-color:var(--arcade-accent)}
 .arcade-settings .icon{width:18px;height:18px;flex:none}
 body.arcade-fit-open{overflow:hidden}
-.arcade-frame[data-fit=true]{position:fixed;inset:12px;z-index:100;width:calc(100% - 24px);max-width:1280px;height:calc(100vh - 24px);height:calc(100dvh - 24px);margin:0 auto;display:flex;flex-direction:column;gap:10px;padding:12px;overflow:hidden;background:var(--arcade-bg);color:var(--arcade-ink);border:1px solid var(--arcade-border);border-radius:8px;box-shadow:0 0 0 100vmax rgb(0 0 0 / .35)}
+.arcade-frame[data-fit=true]{position:fixed;inset:12px;z-index:100;width:calc(100% - 24px);height:calc(100vh - 24px);height:calc(100dvh - 24px);margin:0 auto;display:flex;flex-direction:column;gap:10px;padding:12px;overflow:hidden;background:var(--arcade-bg);color:var(--arcade-ink);border:1px solid var(--arcade-border);border-radius:8px;box-shadow:0 0 0 100vmax rgb(0 0 0 / .35)}
 .arcade-frame[data-fit=true] .arcade-settings{flex:none;margin:0}
 .arcade-frame[data-fit=true]{top:50%;bottom:auto;transform:translateY(-50%);height:var(--arcade-fit-height,calc(100dvh - 24px));max-height:calc(100dvh - 24px)}
 .arcade-frame[data-fit=true] #arcade-stage{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain}
