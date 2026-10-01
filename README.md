@@ -4,7 +4,7 @@
 
 Portfólio estático em português, com dark mode padrão, catálogo de projetos, estudos de caso, contato e currículo para impressão.
 
-O layout usa margens fluidas de 16 a 64 px, sem teto fixo de largura para as seções. Os parágrafos mantêm uma medida de leitura limitada. Jogos enquadrados usam 12 px de margem lateral e preservam a proporção dos cenários.
+O layout usa margens fluidas de 20 a 96 px por lado, sem teto fixo de largura para as seções. Os parágrafos mantêm uma medida de leitura limitada. Jogos enquadrados usam margens de 12 a 32 px e preservam a proporção dos cenários. Os controles dos jogos têm pelo menos 44 px de altura, inclusive em telas horizontais curtas.
 
 ## Projetos
 

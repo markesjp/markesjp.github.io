@@ -64,7 +64,10 @@ export function initArcade() {
       naturalHeight = Math.min(320, scene.clientWidth - horizontal) + vertical;
     }
     const compact = window.matchMedia('(min-width:560px) and (max-height:500px)').matches;
-    const height = compact ? window.innerHeight - 24 : Math.min(window.innerHeight - 24, Math.ceil(overhead + naturalHeight));
+    // Read the resolved inset: custom properties retain their clamp() text.
+    const margin = parseFloat(getComputedStyle(frame).left) || 12;
+    const availableHeight = window.innerHeight - margin * 2;
+    const height = compact ? availableHeight : Math.min(availableHeight, Math.ceil(overhead + naturalHeight));
     const current = parseFloat(frame.style.getPropertyValue('--arcade-fit-height'));
     if (!Number.isFinite(current) || Math.abs(current - height) > 1) frame.style.setProperty('--arcade-fit-height', `${height}px`);
   };
