@@ -123,14 +123,18 @@ export function initArcade() {
     window.dispatchEvent(new CustomEvent('jp-fit-change', {detail: {fit}}));
   };
   fitButton?.addEventListener('click', () => setFit(!fit), {signal: abort.signal});
-  // A browser may scroll only the clicked button into view, leaving the scene
-  // behind the sticky header. Show the complete game before starting a round.
+  // Browser focus/scroll can expose a control while hiding the game heading.
+  // Keep the complete game visible when starting, pausing or using controls.
   frame?.addEventListener('click', event => {
-    if (fit || !event.target.closest('[data-start]')) return;
+    if (fit || !event.target.closest('.arcade-controls button')) return;
     const header = document.querySelector('.header');
+    const headerBottom = header?.getBoundingClientRect().bottom || 0;
     const available = window.innerHeight - (header?.getBoundingClientRect().height || 0) - 32;
-    if (frame.getBoundingClientRect().height > available) setFit(true);
-    else frame.scrollIntoView({block: 'start', behavior: motionMedia.matches ? 'auto' : 'smooth'});
+    const bounds = frame.getBoundingClientRect();
+    if (bounds.height > available) setFit(true);
+    else if (bounds.top < headerBottom + 16 || bounds.bottom > window.innerHeight - 16) {
+      frame.scrollIntoView({block: 'start', behavior: motionMedia.matches ? 'auto' : 'smooth'});
+    }
   }, {capture: true, signal: abort.signal});
   frame?.addEventListener('keydown', event => {
     if (!fit) return;
